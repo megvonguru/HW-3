@@ -1,0 +1,250 @@
+---
+title: An R Markdown document converted from "Meg_BasicCleaning_R.ipynb"
+output: html_document
+---
+
+# Data Cleaning: recurring coding strategies
+
+Imagine we have this data:
+
+```{r}
+# the link as CSV
+linkToLifeExpectancy="https://github.com/megvonguru/HW-3/raw/refs/heads/main/Life%20expectancy%20at%20birth.csv"
+linkToMaternalMortality="https://github.com/megvonguru/HW-3/raw/refs/heads/main/Maternal%20mortality%20ratio.csv"
+linkToInfantMortality="https://github.com/megvonguru/HW-3/raw/refs/heads/main/Infant%20mortality%20rate.csv"
+```
+
+Read the data from each of the files:
+
+```{r}
+lifeExpect=read.csv(linkToLifeExpectancy,na.strings = c(""))
+
+matMort=read.csv(linkToMaternalMortality,na.strings = c(""))
+
+infMort=read.csv(linkToInfantMortality,na.strings = c(""))
+```
+
+Verify if the data is good for the first file by doing head and tail
+
+```{r}
+str(lifeExpect)
+head(lifeExpect)
+tail(lifeExpect)
+```
+
+Do the Same for the second file
+
+```{r}
+str(matMort)
+head(matMort)
+tail(matMort)
+```
+
+Same for the third file
+```{r}
+
+str(infMort)
+head(infMort)
+tail(infMort)
+```
+
+
+Verify the current column names:
+
+---
+
+
+```{r}
+#current names:
+names(lifeExpect)
+names(matMort)
+names(infMort)
+```
+
+Make sure there is no empty data
+```{r}
+names(lifeExpect)[names(lifeExpect)!='NA']
+names(matMort)[names(matMort)!='NA']
+names(infMort)[names(infMort)!='NA']
+```
+
+Convert the data into column list
+```{r}
+colnames(lifeExpect) <- as.list(names(lifeExpect))
+colnames(matMort) <- as.list(names(matMort))
+colnames(infMort) <- as.list(names(infMort))
+```
+
+The first file looks OK but the Maternal and Infant Mortality files have long namee on the Death rate. Similarly, the region column had the wrong column. Fix both columns
+```{r}
+
+colnames(matMort)[colnames(matMort) == "deaths.100"] <- "Death"
+colnames(matMort)[colnames(matMort) == "ranking"] <- "Region"
+
+colnames(infMort)[colnames(infMort) == "deaths.1"] <- "Death"
+colnames(infMort)[colnames(infMort) == "ranking"] <- "Region"
+```
+
+Extract the 3 columns which is country name, variable and the region
+```{r}
+# renaming
+lifeExpect <- lifeExpect[, c("name", "years", "region")]
+
+## see new column names
+lifeExpect
+```
+
+Do the same for the second file
+```{r}
+# renaming
+matMort <- matMort[, c("name", "Death", "Region")]
+
+## see new column names
+matMort
+```
+
+Also on the third file
+```{r}
+# renaming
+infMort <- infMort[, c("name", "Death", "Region")]
+
+## see new column names
+infMort
+```
+
+
+Identify which are textual, numerical, or categorical.
+
+```{r}
+str(lifeExpect)
+```
+
+```{r}
+str(matMort)
+```
+
+```{r}
+str(infMort)
+```
+
+
+Verify if the name fields have characters for the country and region fields
+```{r}
+# this looks ok
+lifeExpect$name[grep("[^a-zA-Z\\s]",lifeExpect$name,perl = T)]
+lifeExpect$region[grep("[^a-zA-Z\\s]",lifeExpect$region,perl = T)]
+```
+
+Do the same for the second file
+```{r}
+matMort$name[grep("[^a-zA-Z\\s]",matMort$name,perl = T)]
+matMort$Region[grep("[^a-zA-Z\\s]",matMort$Region,perl = T)]
+```
+
+And the third file
+```{r}
+infMort$name[grep("[^a-zA-Z\\s]",infMort$name,perl = T)]
+infMort$Region[grep("[^a-zA-Z\\s]",infMort$Region,perl = T)]
+```
+
+Make sure the numbers field is numeric
+
+
+```{r}
+lifeExpect[,'years'][grep("[^\\d+\\.*\\d*]", lifeExpect$'years', perl=T,invert = F)]
+```
+
+```{r}
+matMort[,'Death'][grep("[^\\d+\\.*\\d*]", matMort$'Death', perl=T,invert = F)]
+```
+
+```{r}
+infMort[,'Death'][grep("[^\\d+\\.*\\d*]", infMort$'Death', perl=T,invert = F)]
+```
+
+## C. Cleaning
+
+### C.1 Cleaning column names
+
+
+Remove leading and trailing spaces:
+
+```{r}
+colnames(lifeExpect) == trimws(colnames(lifeExpect),whitespace = "[\\h\\v]")
+```
+
+```{r}
+colnames(matMort) == trimws(colnames(matMort),whitespace = "[\\h\\v]")
+```
+
+```{r}
+colnames(infMort) == trimws(colnames(infMort),whitespace = "[\\h\\v]")
+```
+
+In general, you want to be sure the row index starts in 'one' and continues with consecutive values. Remove the first row
+
+```{r}
+rownames(lifeExpect)=NULL
+rownames(matMort)=NULL
+rownames(infMort)=NULL
+```
+
+Verify the data. looks OK
+```{r}
+lifeExpect
+matMort
+infMort
+```
+
+# SAVING the CLEAN data in a clean folder
+
+```{r}
+
+
+folder <- "dataCleaned"
+
+# Check if the folder exists
+if (!dir.exists(folder)) {
+  # Create the folder
+  dir.create(folder)
+ }
+
+#Save the RDS and csv files in the folder
+cleanLifeExpect=lifeExpect[,]
+saveRDS(cleanLifeExpect,file.path(folder,"cleanLifeExpect.RDS"))
+ write.csv(cleanLifeExpect,file.path(folder,"cleanLifeExpect.csv"))
+
+cleanMatMort=matMort[,]
+ saveRDS(cleanMatMort,file.path(folder,"cleanMatMortality.RDS"))
+ write.csv(cleanMatMort,file.path(folder,"cleanMatMortality.csv"))
+
+cleanInfMort=infMort[,]
+ saveRDS(cleanInfMort,file.path(folder,"cleanInfMortality.RDS"))
+ write.csv(cleanInfMort,file.path(folder,"cleanInfMortality.csv"))
+```
+
+Read the files and verify everything is OK
+```{r}
+lifeExpectRDS=readRDS(file.path(folder,"cleanLifeExpect.RDS"))
+str(lifeExpectRDS)
+
+lifeExpectCSV=read.csv(file.path(folder,"cleanLifeExpect.csv"))
+str(lifeExpectCSV)
+```
+
+```{r}
+matMortRDS=readRDS(file.path(folder,"cleanMatMortality.RDS"))
+str(matMortRDS)
+
+matMortCSV=read.csv(file.path(folder,"cleanMatMortality.csv"))
+str(matMortCSV)
+```
+
+```{r}
+infMortRDS=readRDS(file.path(folder,"cleanInfMortality.RDS"))
+str(infMortRDS)
+
+infMortCSV=read.csv(file.path(folder,"cleanInfMortality.csv"))
+str(infMortCSV)
+```
+
